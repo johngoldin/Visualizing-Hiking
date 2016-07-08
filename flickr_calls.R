@@ -1,5 +1,6 @@
 
 
+source("flickr_values.RData")  # holds id and key for flickr. ignored by github
 
 # user_id <- "99418994@N00"
 # 
