@@ -18,7 +18,10 @@
 #test:  camera_gps_time_difference("2015 Cabo de Gata", "Track_A015-04-18 143249.gpx", filter_by_time = FALSE) 
 #test:  camera_gps_time_difference("2013 Yosemite", "Track_GLACIER PT 160104.gpx", filter_by_time = FALSE) 
 #test:  camera_gps_time_difference("2013 Yosemite", "Track_MARIPOSA09 135136.gpx", filter_by_time = FALSE) 
-
+#test:  camera_gps_time_difference("2016 Rome", "Track_2016-10-03 PANTHEON.gpx", filter_by_time = FALSE, album = "2016 Italy") 
+#test:  camera_gps_time_difference("2016 Italy", "Track_2016-10-03 COLISEUM.gpx", filter_by_time = FALSE, album = "2016 Rome") 
+#test:  camera_gps_time_difference("2016 Italy", "Track_2016-09-29 PAESTUM.gpx", filter_by_time = FALSE) 
+#test:  camera_gps_time_difference("2016 Phoenix", "2016-12-26 GRANITE MTN WALK.GPX", filter_by_time = FALSE) 
 
 camera_gps_time_difference <- function(trip_name, GPX_file, use_api_key = api_key,
                                        use_user_id = user_id,

@@ -1,5 +1,11 @@
 #library("rgeos")
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+#   You probably want to be in combine_gpx.R rather than here
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 filter_photos <- function(photos, hikes)
   # find photos during the hike
 {
@@ -28,11 +34,18 @@ revise_bbox <- function(bbox1, bbox2) {
   bbox1
 }
 
-
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+#   You probably want to be in combine_gpx.R rather than here
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # for each trip, return a list with map, hikes data.frame
 # note that for this test, add_camera_gps = TRUE so that I can see a separate icon for the unadjusted time.
 # test:  xx <- map_trip(NULL, "Pennine Way Test", album_name = "2013 Pennine Way", use_api_key = api_key, use_user_id = user_id, add_camera_gps = TRUE, adjust_camera_time = 0 * 60 * 60)
+# xx <- map_trip(NULL, "2016 Italy", album_name = "2016 Italy", use_api_key = api_key, use_user_id = user_id, add_camera_gps = FALSE, adjust_camera_time = -1 * 60 * 60)
+# xx <- map_trip(NULL, "2016 Rome", album_name = "2016 Italy", use_api_key = api_key, use_user_id = user_id, add_camera_gps = FALSE, adjust_camera_time = -2 * 60 * 60)
+#  Try xx$map to see the test map
 map_trip <- function(trip,
                      trip_name, 
                      album_name = NULL,
@@ -49,9 +62,12 @@ map_trip <- function(trip,
   if (!is.null(trip)) map <- trip$map
   if (is.null(album_name)) album_name <- trip_name
   base_path <- path.expand(base_path)
+  # if "ignore" appears in the file name it will be ignored
   file_names <- list.files(paste(base_path, trip_name, "/", sep = ""))
+  file_names <- file_names[!str_detect(file_names, regex("Ignore", ignore_case = TRUE))]
   gpx_files <- paste(base_path, trip_name, "/", file_names, sep = "")
   # (?i:) makes case insensitive.   http://www.regular-expressions.info/modifiers.html
+  # str_detect("Ignore", "(?i:ignore)")
   gpx_files <- subset(gpx_files, str_detect(gpx_files, "\\.(?i:gpx)"))   
   gpx_files <- gpx_files[order(gpx_files)]
   if (map_photos & !is.null(use_api_key) & !is.null(use_user_id)) {
@@ -85,7 +101,8 @@ map_trip <- function(trip,
     if (is.null(hikes)) hikes <- hike
     else hikes <- bind_rows(hike, hikes)
     cat(paste("file:",i, file_names[i]))
-    if (!is.na((str_locate(file_names[i], "Drive")[1, 1]))) {
+    cat(sprintf(" %s %s ", as.character(min(wp_df$time)), as.character(max(wp_df$time))))
+    if (!is.na((str_locate(file_names[i], regex("Drive", ignore_case = TRUE))[1, 1]))) {
       cat(" contains Drive. \n")
       added_track <- add_gpx_to_leaflet(gpx_files[i], map, "lightyellow", cumbbox = NULL)
       track_bbox <- NULL  # don't add to bbox if this is a Drive

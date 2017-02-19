@@ -13,8 +13,7 @@ output:
 library("rgdal")
 library("lubridate")
 library("plyr")
-library("dplyr")
-library("ggplot2")
+library(tidyverse)
 library("leaflet")
 library("stringr")
 library("RColorBrewer")
@@ -362,6 +361,27 @@ if (redo) {
                   madrid$bbox_trip[1, 2], madrid$bbox_trip[2, 2])
 ```
 
+#### Madrid 2015
+In the spirit of the Amsterdam map, here's my afternoon in Madrid. I took a train from
+Granada and did some unsystematic touring in the vicinity of my hotel.
+
+```{r create_italy, echo = FALSE, message = FALSE, include = FALSE, warning=FALSE}
+if (!redo) load("italy.RData")
+if (redo) {
+  italy <- map_trip(NULL, "2016 Italy", use_api_key = api_key, use_user_id = user_id,
+                           add_camera_gps = FALSE, adjust_camera_time = -2 * 60 * 60)
+  save(italy, file = "italy.RData")
+}
+```
+```{r print_madrid, echo = FALSE}
+        addLayersControl(madrid$map, baseGroups = c("Topographical", "Road map", "Satellite"),
+                         #overlayGroups = c("Hiking routes"),
+                         #overlayGroups = c("Hiking routes", "Photo markers", "Camera GPS"),
+                         overlayGroups = c("Hiking routes", "Photo markers", "Other trips"),
+                         options = layersControlOptions(collapsed = FALSE)) %>%
+        fitBounds(madrid$bbox_trip[1, 1], madrid$bbox_trip[2, 1], 
+                  madrid$bbox_trip[1, 2], madrid$bbox_trip[2, 2])
+```
 
 #### Elevation Profile for Walks
 I have also done some experiments with elevation plots from the GPS trace. These plots show
