@@ -2,3 +2,9 @@
 .Rhistory
 .RData
 .Ruserdata
+saved_trip_data
+junky_stuff
+SWCP_trip_files
+rsconnect
+.DS_Store
+flickr_values.RData
