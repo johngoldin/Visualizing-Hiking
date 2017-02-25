@@ -50,11 +50,13 @@ trips_df <- data_frame(trip = c("Hadrians Wall",         "Coast to Coast",      
                        gpx_name = vector("character", ntrips),
                        album_name = vector("character", ntrips),
                        add_camera_gps = FALSE,
+                       # ajust_camera_time exists to adjust the difference between the time zone on the GPS trace and the time zone on the photo.
                        adjust_camera_time = c(5 , -1 , 0 , -1 ,  -1 ,  -1 , 4 , 5 ,
                                              -1 ,  7 , 4 , 7 , 7 , 6 , 7, 5,
                                               -1 , -2 , -1 , -1 , -2 , -2, -1, -2)
 )
 trips_df$adjust_camera_time <- trips_df$adjust_camera_time * 60 * 60 # translate from hours to seconds
+# the foler names where I have the GPS traces don't always match the album names on Flickr.
 trips_df$gpx_name = paste(trips_df$year, trips_df$trip)
 trips_df$album_name = paste(trips_df$year, trips_df$trip)
 trips_df$album_name[trips_df$trip == "Coast to Coast"] <- "Coast to Coast"
@@ -109,6 +111,7 @@ trip_photos_df <- bind_rows(trip_photos_list) %>%
                         url_s, height_s, width_s, album_id, include, lng, lat, area) %>%
   filter(include)
 
+# Oh boy! I'm purrr-ing.
 other_photos <- map2(c("Other USA", "Other UK", "Other Spain"), c("USA", "England", "Spain"), collect_photos_from_album, use_api_key = api_key, use_user_id = user_id)
 other_photos_df <- bind_rows(other_photos) %>%
   filter(!(id %in% trip_photos_df$id), !is.na(longitude), !is.na(latitude))

@@ -18,4 +18,4 @@ The GPS trace from my Garmin is based on Greenwich time. The clock on my camera 
 a parameter that adjusts each trace by hours. Sometimes it is tricky to figure out how to do that adjustment. I created
 `camera_gps_time_difference.R` to help. It looks at photos that have location information attached and compares that location to the GPS trace. It then reports on the typical difference between the photo time stamp and the time on the GPS trace.
 
-
+On my local Mac, the GPS traces are not stored in the same folder as my RStudio project and those traces are not uploaded to this GitHub repository.
