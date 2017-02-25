@@ -80,13 +80,13 @@ ui <- function(request) {
                             selected = "Italy 2016")),
       column(1),
       column(1, fluidRow(" ", p()," ", actionButton("focusButton", strong("Re-focus Map")))),
-      column(1), 
-      column(1, fluidRow(" ", p()," ", p(), p(), p(), p(), p(), bookmarkButton()))
+      column(1, p()), 
+      column(1, fluidRow(" ", p()," ", bookmarkButton()))
       #column(1, fluidRow(" ", p()," ", p(), p(), actionButton("notesButton", strong("Notes"))))
       
     ),
     fluidRow("     Click on photo icon to see photo and then click on the photo to open a new tab showing the photo in Flickr. For notes, click", 
-             a("here", href="https://caniblogtoo.wordpress.com/2016/06/28/notes-for-souvenirs-of-my-walks", target="_blank"), "."),
+             a("here", href="https://johngoldin.github.io/2016/06/28/technical-note--shiny-souvenir-map-of-walks/", target="_blank"), "."),
     leafletOutput("mymap", height = 500, width = 700)
   )
 }
