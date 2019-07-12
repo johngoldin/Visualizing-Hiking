@@ -25,7 +25,7 @@ flickr_photosets_getlist <- function(the_api_key = api_key, the_user_id = user_i
     , the_api_key
     , the_user_id
   )
-  ) %>% content(as = "text") %>%
+  ) %>% content(as = "text", encoding = "UTF-8") %>%
     fromJSON()  # check that xy$stat == "ok"
   if (xx$stat != "ok") return(xx$stat)
   albums <- xx$photosets[[5]]
@@ -33,6 +33,7 @@ flickr_photosets_getlist <- function(the_api_key = api_key, the_user_id = user_i
 }
 
 # SWCP photoset_id is 72157657606414684
+# 2018 Greece:  72157691219710510   xx <- flickr_photosets_getphotos(the_photoset_id = "72157691219710510")
 #test:  xx <- flickr_photosets_getphotos()
 flickr_photosets_getphotos <- function(the_photoset_id = "72157657606414684", 
                                        time_start = NULL, 
@@ -48,7 +49,7 @@ flickr_photosets_getphotos <- function(the_photoset_id = "72157657606414684",
     , the_user_id
     , "description,date_taken,geo,url_m,url_s"
   )
-  ) %>% content(as = "text") %>%
+  ) %>% content(as = "text", encoding = "UTF-8") %>%
     fromJSON()  # check that xy$stat == "ok"
   if (xx$stat != "ok") {
     print(paste("Flickr error", code, message))
@@ -64,6 +65,32 @@ flickr_photosets_getphotos <- function(the_photoset_id = "72157657606414684",
   if (is.null(time_start) & is.null(time_end)) return(xx$photoset$photo)
   filter(xx$photoset$photo, is.null(time_start) | (datetaken >= time_start), is.null(time_end) | (datetaken >= time_end))
 }
+
+#test:  xx <- flickr_photos_getExif()
+flickr_photos_getExif <- function(the_photo_id = "42211951881", 
+                                  the_api_key = api_key, 
+                                  the_secret = secret) {
+  xx <- GET(url=sprintf(
+    "https://api.flickr.com/services/rest/?method=flickr.photos.getExif&api_key=%s&photo_id=%s&format=json&nojsoncallback=1",
+     the_api_key,
+     the_photo_id
+  )
+  ) %>% content(as = "text", encoding = "UTF-8") %>%
+    fromJSON()  # check that xy$stat == "ok"
+  if (xx$stat != "ok") {
+    print(paste("Flickr error", code, message))
+    return(xx$stat)
+  }
+  # tags:     ModifyDate OffsetTime  DateTimeOriginal OffsetTimeOrginal
+  #xx$photo$exif[xx$photo$exif$tag %in% c("ModifyDate","DateTimeOriginal"), 5]
+  xx <- xx$photo$exif
+  DateTimeOriginal <- xx[xx$tag == "DateTimeOriginal", 5][1, 1]
+  ModifyDate <- xx[xx$tag == "ModifyDate", 5][1, 1]
+  return(tibble(photo_id = the_photo_id, 
+                       DateTimeOriginal = ymd_hms(DateTimeOriginal),
+                       ModifyDate = ymd_hms(ModifyDate)))
+}
+
 
 # test:   some_photos <- photos_from_trip(api_key, user_id, "2015 SWCP")
 # test:   some_photos <- photos_from_trip(api_key, user_id, "Other UK")
@@ -91,7 +118,10 @@ photos_from_trip <- function(api_key, user_id, trip_name, ...) {
     }
   }
   # description gets returned as a data.frame. I'm not sure why. so get _content
-  if(!is.null(photos)) photos$description <- photos$description[ ,"_content"]
+  if(!is.null(photos)) {
+    photos$description <- photos$description[ ,"_content"]
+    # on_trace <- FALSE
+  }
   photos
 }
 

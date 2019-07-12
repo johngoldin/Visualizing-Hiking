@@ -16,7 +16,7 @@ get_gpx_points <- function(gpx_folder) {
     wp$start <- min(wp$time)
     wp$hours <- as.numeric(difftime(wp$time, wp$start, units = "hours"))
     wp <- as.data.frame(wp)
-    hike <- data_frame( distance = dist, hours = wp$hours, elev = wp$ele, time = wp$time) 
+    hike <- tibble( distance = dist, hours = wp$hours, elev = wp$ele, time = wp$time) 
     #     time_step <- c(wp$hours[2:length(wp$hours)] - wp$hours[1:length(wp$hours) -1], NA)
     #     cutoff <- min(which(time_step > 1), na.rm = TRUE)
     #     if (cutoff >= length(wp$hours)) cutoff <- NA

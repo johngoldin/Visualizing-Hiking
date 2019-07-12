@@ -32,6 +32,8 @@ revise_bbox <- function(bbox1, bbox2) {
 # test:  xx <- combine_gpx("Pennine Way Test", album_name = "2013 Pennine Way", area = "England", use_api_key = api_key, use_user_id = user_id, add_camera_gps = TRUE, adjust_camera_time = 0 * 60 * 60)
 # test:  xx <- combine_gpx("2013 Pennine Way", album_name = "2013 Pennine Way", use_api_key = api_key, use_user_id = user_id, add_camera_gps = TRUE, adjust_camera_time = 0 * 60 * 60)
 # test:  xx <- combine_gpx("2016 Grand Canyon", album_name = "2016 Grand Canyon", use_api_key = api_key, use_user_id = user_id, add_camera_gps = TRUE, adjust_camera_time = 0 * 60 * 60)
+# test:  xx <- combine_gpx("2018 Greece", album_name = "2018 Greece", use_api_key = api_key, use_user_id = user_id, add_camera_gps = TRUE, adjust_camera_time = -2 * 60 * 60)
+# test:  xx <- combine_gpx("2016 Amalfi Coast", album_name = "2016 Italy", use_api_key = api_key, use_user_id = user_id, add_camera_gps = TRUE, adjust_camera_time = -2 * 60 * 60)
 combine_gpx <- function(trip_name, 
                      album_name = NULL,
                      mark_photos = TRUE, 
@@ -41,13 +43,15 @@ combine_gpx <- function(trip_name,
                      small_pictures = TRUE,
                      adjust_camera_time = 0, # adjustment because gpx is zulu, not localtime zone
                      add_camera_gps = FALSE, # map marker based on camera gps location
+                     all_tagged_photos = TRUE, # include geo-tagged photos even if not in trace time range
                      use_api_key = NULL, use_user_id = NULL,
                      area = NA_character_) {
   trip_bbox <- NULL
   if (is.null(album_name)) album_name <- trip_name
   base_path <- path.expand(base_path)
   file_names <- list.files(paste(base_path, trip_name, "/", sep = ""))
-  file_names <- file_names[!str_detect(file_names, regex("Ignore", ignore_case = TRUE))]
+  file_names <- file_names[(!str_detect(file_names, regex("Ignore", ignore_case = TRUE))) &
+                             str_detect(file_names, regex("\\.gpx", ignore_case = TRUE))]
   gpx_files <- paste(base_path, trip_name, "/", file_names, sep = "")
   # (?i:) makes case insensitive.   http://www.regular-expressions.info/modifiers.html
   gpx_files <- subset(gpx_files, str_detect(gpx_files, "\\.(?i:gpx)"))   
@@ -63,7 +67,12 @@ combine_gpx <- function(trip_name,
       trip_photos$include <- FALSE
       trip_photos$lng <- NA_real_
       trip_photos$lat <- NA_real_
-      trip_photos$area <- NA_character_
+      trip_photos$area <- area
+      trip_photos$longitude <- as.numeric(trip_photos$longitude)
+      trip_photos$latitude <- as.numeric(trip_photos$latitude)
+      if (all_tagged_photos) {
+        trip_photos$include <- !is.na(trip_photos$longitude) & !is.na(trip_photos$latitude)
+      }
       add_photos <- TRUE
       titles <- !str_detect(trip_photos$title, "(^[A-Z][A-Z][A-Z].+)|(^Photo [0-9].+)|(^$)|(photo)")
       trip_photos$description[titles] <- str_c(trip_photos$title[titles], trip_photos$description[titles], sep = " ")
@@ -79,7 +88,7 @@ combine_gpx <- function(trip_name,
   hikes_list <- vector("list", n)
   traces_list <- vector("list", n)
   traces_color <- vector("character", n)
-  # hikes <- data_frame( distance = double(length = n), hours =  double(length = n), elev =  double(length = n), 
+  # hikes <- tibble( distance = double(length = n), hours =  double(length = n), elev =  double(length = n), 
   #                      longitude =  double(length = n), latitude =  double(length = n),
   #                      time =  double(length = n), trip_name = character(length = n),
   #                      miles =  double(length = n),
@@ -98,7 +107,7 @@ combine_gpx <- function(trip_name,
     latitude = coordinates(wp)[, 2]
     wp_df <- as.data.frame(wp)
     # each element of hikes_list has the readOGR nonverbose info for this a hike (info to place photos)
-    hikes_list[[i]] <- data_frame( distance = dist, 
+    hikes_list[[i]] <- tibble( distance = dist, 
                                    hours = wp_df$hours, elev = wp_df$ele, 
                                    longitude = longitude, latitude = latitude,
                                    time = ymd_hms(wp_df$time), # convert timestamps to datetime-objects
@@ -109,16 +118,19 @@ combine_gpx <- function(trip_name,
     # m <-  addPolylines(m, data=traces_list[[i]], group='Hiking routes', color = traces_color[[i]])
     a_track <- readOGR(gpx_files[i], layer = "tracks", verbose = FALSE)
     traces_list[[i]] <- a_track
-    if (!is.na((str_locate(file_names[i], regex("Drive", ignore_case = TRUE))[1, 1]))) {
-      cat(" contains Drive. \n")
-      traces_color[[i]] <- "lightyellow"
+    if (!is.na((str_locate(file_names[i], regex("(Drive|Ferry|Bus Trip|Bus Ride|Taxi|Airplane|Car Ride)", ignore_case = TRUE))[1, 1]))) {
+      if (!is.na((str_locate(file_names[i], regex("(Ferry|Airplane)", ignore_case = TRUE))[1, 1]))) {
+        traces_color[[i]] <- "darkgray"
+      } else traces_color[[i]] <- "darkgray"
+      cat(paste0(file_names[i], " color: ", traces_color[[i]], "\n"))
+      # cat(" contains Drive or Ferry or Taxi or Bus Ride. \n")
       #added_track <- add_gpx_to_leaflet(gpx_files[i], map, "lightyellow", cumbbox = NULL)
       track_bbox <- NULL  # don't add to bbox if this is a Drive
     }
     else {
-      cat(" does not contain Drive. \n")
+      cat(paste0(file_names[i], " does not contain Drive. \n"))
       color_index <- color_index + 1
-      traces_color[[i]] <- brewer.pal(3, "YlOrRd")[(i %% 2) + 2]
+      traces_color[[i]] <- brewer.pal(3, "YlOrRd")[(color_index %% 2) + 2]
       #added_track <- add_gpx_to_leaflet(gpx_files[i], map, brewer.pal(3, "YlOrRd")[(i %% 2) + 2])
       track_bbox <- bbox(traces_list[[i]])
     }
@@ -157,11 +169,29 @@ combine_gpx <- function(trip_name,
       }
     }
   } 
-  if (!is.null(trip_photos)) trip_photos <- select(trip_photos, id, secret, title, description, datetaken,
-                        latitude, longitude, url_m, height_m, width_m,
-                        url_s, height_s, width_s, album_id, include, lng, lat, area)
+  if (!is.null(trip_photos)) {
+    # i dont think I need this here because I moved the de-dupping to collect_gps_data_for_maps
+    # gps_lat_long <- trip_photos %>% 
+    #   group_by(id, secret) %>%
+    #   summarise(lng = max(lng, na.rm = TRUE), lat = max(lat, na.rm = TRUE)) %>%   # max of NULL returns -Inf
+    #   mutate(lng = ifelse(lng == -Inf, NA, lng), lat = ifelse(lat == -Inf, NA, lat))
+    # trip_photos <- trip_photos %>%
+    #   select(id, secret, title, description, datetaken,
+    #                     url_m, height_m, width_m, latitude, longitude, # removed lng, lat, 
+    #                     url_s, height_s, width_s, album_id, include, area) %>%
+    #   left_join(gps_lat_long, by = c("id", "secret")) %>%
+    #   mutate(lng = ifelse(is.na(lng), longitude, lng), 
+    #          lat = ifelse(is.na(lat), latitude, lat)) %>%
+    #   # datetaken gets adjusted differently for some photo albums, e.g., 2016 Italy different for Rome & Amalfi
+    #   select(-longitude, -latitude, -datetaken) %>%
+    #   unique()
+    trip_photos <- trip_photos %>%
+      select(id, secret, title, description, datetaken,
+                        url_m, height_m, width_m, latitude, longitude, lng, lat,
+                        url_s, height_s, width_s, album_id, include, area) 
+  }
   # At this point, trip_bbox is the bounding box for this trip
-  # trip_photos is data_frame of photos for this trip
+  # trip_photos is tibble of photos for this trip
   list(day_names = file_names, trip_photos = trip_photos, 
        traces_list = traces_list, traces_color = traces_color, trip_bbox = trip_bbox)
 }

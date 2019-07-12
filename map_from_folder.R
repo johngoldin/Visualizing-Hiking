@@ -41,7 +41,9 @@ map_from_folder <- function (gpx_folder, folder_label = "Hiking Trails", base_pa
   }
   # Layers control
   m <- addLayersControl(m,
-    baseGroups = c("Topographical", "Road map", "Satellite"),
+    # baseGroups = c("Topographical", "Road map", "Satellite"),
+    baseGroups = c("Landscape", "Satellite", "Terrain", "Road Map"),
+
     overlayGroups = c("Hiking routes"),
     #overlayGroups = c("Hiking routes", "Photo markers"),
     options = layersControlOptions(collapsed = FALSE))

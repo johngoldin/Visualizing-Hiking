@@ -2,6 +2,14 @@
 # This may be the only sourced file that we need in the app. It loads both trip traces
 # and photos.
 
+########################################################################################################################
+#
+# IMPORTANT!
+# If you make changes here, need to run:  
+# file.remove("saved_map.RData") 
+# Otherwise, won't see changes because app will skipthis and rely on saved_map.RData instead.
+#
+
 
 # Here's the data I have to work with:
 
@@ -21,18 +29,40 @@ pad_description <- function(d) {
   paste("<br/>", d, "<br/>", sep = "")
 }
 
+addMyProviders <- function(m) {
+  print("in my providers")
+  m %>%
+    # addTiles("https://{s}.tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=452dc06e5d1947b7b4e893535d0e6b36", group = "Terrain") %>%
+    # addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
+    # addProviderTiles(providers$OpenTopoMap, group = "Open Topo") %>%
+    # addProviderTiles(providers$OpenStreetMap.Mapnik, group = "Road Map")  
+    
+    addProviderTiles(providers$OpenTopoMap, group = "Topographical") %>%
+    # addTiles("https://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png?apikey=452dc06e5d1947b7b4e893535d0e6b36", group = "Topographical") %>%
+    addProviderTiles(providers$Thunderforest.Outdoors, group = "Outdoors",
+                     options = providerTileOptions(apikey = "452dc06e5d1947b7b4e893535d0e6b36")) %>%
+    addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
+    addProviderTiles("OpenStreetMap.Mapnik", group = "Road map") %>%
+    addLayersControl(baseGroups = c("Outdoors", "Topographical", "Satellite", "Road map"),    
+                     overlayGroups = c("Hiking routes", "Photo markers"),
+                     options = layersControlOptions(collapsed = FALSE)) %>%
+    addScaleBar(position = c("topleft"))
+  
+}
 #test:    m = add_lines_for_trip(m = NULL, trip = trips_list[[1]], trip_colors = colors_list[[1]])
 #test:   track <- readOGR("/Users/johng/Dropbox/Mapping Info-iDisk/Track Archive/2014 Pyrenees/Track_2014-10-20 ESPOT2.gpx", layer = "tracks", verbose = FALSE)
 add_lines_for_trip <- function(m = NULL, trip, trip_colors) {
   if (is.null(m)) {
     m <- leaflet(height = "700px", width = NULL) %>%
+      addMyProviders()
       # Add tiles
-      addProviderTiles("Thunderforest.Landscape", group = "Topographical") %>%
-      addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
-      addProviderTiles("OpenStreetMap.Mapnik", group = "Road map") 
+      # addProviderTiles(providers$Thunderforest.Landscape, group = "Landscape") %>%
+      # addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
+      # addProviderTiles(providers$Stamen.Terrain, group = "Terrain") %<%
+      # addProviderTiles(providers$OpenStreetMap.Mapnik, group = "Road map")  
   }
   for (k in seq_along(trip)) {
-    # print(paste("adding day", k, length(trip[[k]])))
+    print(paste("add_lines_for_trip", k, trip_colors[k], trip[[k]]@data[["name"]]))
     m <-  addPolylines(m, data=trip[[k]], group='Hiking routes', color = trip_colors[k])
   }
   m
@@ -47,6 +77,8 @@ add_trips_to_map <- function(m = NULL, trips_list = NULL, colors_list = NULL, pi
     trips_list <- trips_list[pick_area]
   }
   for (k in seq_along(trips_list)) {
+    # use this to get name of trip name (internal to gpx file): trips_list[[k]][[1]]@data[["name"]]
+    # print(paste(trips_list[[k]][[1]]@data[["name"]], "color:", colors_list[[k]]))
     # print(paste("trip", k, length(trips_list[[k]]), !is.null(trips_list[[k]])))
     if (!is.null(trips_list[[k]])) {
       m <- add_lines_for_trip(m, trips_list[[k]], colors_list[[k]])
@@ -59,13 +91,16 @@ add_trips_to_map <- function(m = NULL, trips_list = NULL, colors_list = NULL, pi
 #test   xx <- add_photos_to_map(all_photos_df, m)
 #test   xx <- add_photos_to_map(all_photos_df, m)
 #specific test:  abc <- add_photos_to_map(xx$trip_photos, m)
+#test    add_photos_to_map(xx, NULL, "2016 Amalfi Coast")
 add_photos_to_map <- function(photos_df, m = null, select_area = NULL) {
   if (is.null(m)) {
     m <- leaflet(height = "700px", width = NULL) %>%
-      addProviderTiles("Thunderforest.Landscape", group = "Topographical") %>%
-      addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
-      addProviderTiles("OpenStreetMap.Mapnik", group = "Road map") 
-  }
+      addMyProviders()
+      # addProviderTiles(providers$Thunderforest.Landscape, group = "Landscape") %>%
+      # addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
+      # addProviderTiles(providers$Stamen.Terrain, group = "Terrain") %<%
+      # addProviderTiles(providers$OpenStreetMap.Mapnik, group = "Road map")  
+    }
   photos_df <- filter(photos_df, !is.na(lng), !is.na(lat), include)
   if (!is.null(select_area)) photos_df <- filter(photos_df, area == select_area)
 

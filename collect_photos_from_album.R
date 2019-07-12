@@ -1,5 +1,5 @@
 
-#test:  xx <- collect_photos_from_album("Coast to Coast", area = "England", use_api_key = api_key, use_user_id = user_id)
+#test:  xx <- collect_photos_from_album("2019 England", area = "England", use_api_key = api_key, use_user_id = user_id)
 collect_photos_from_album <- function(album_name, area = NA_character_, use_api_key = NULL, use_user_id = NULL,
                                       default = trip_photos_df[trip_photos_df$id == "xxxxx", ]) {
   if (!is.null(use_api_key) & !is.null(use_user_id)) {

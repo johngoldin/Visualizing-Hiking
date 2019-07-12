@@ -29,7 +29,9 @@ add_gpx_to_leaflet <- function(GPX_file, m = NULL, color = "blue", cumbbox = NUL
   if (is.null(m)) {
     m <- leaflet(height = height, width = width) %>%
       # Add tiles
-      addProviderTiles("Thunderforest.Landscape", group = "Topographical") %>%
+      # addProviderTiles("Thunderforest.Landscape", group = "Topographical") %>%    # old code before Thunderforest API
+      addTiles("https://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png?apikey=452dc06e5d1947b7b4e893535d0e6b36", group = "Topographical") %>%
+      addTiles("https://{s}.tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=452dc06e5d1947b7b4e893535d0e6b36", group = "Outdoors") %>%
       addProviderTiles("OpenStreetMap.Mapnik", group = "Road map") %>%
       addProviderTiles("Esri.WorldImagery", group = "Satellite")
       

@@ -233,8 +233,9 @@ map_photos <- function(map, album_name, use_api_key = NULL, use_user_id = NULL,
     if (is.null(map)) {
       print(paste("In map_trip.R, about to create map with leaflet  with debugging code map_trip.R."))
       map <- leaflet() %>%
-        addProviderTiles("Stamen.TonerLite",
-                         options = providerTileOptions(noWrap = TRUE), group = "none")
+        addMyProviders()
+      # addProviderTiles("Stamen.TonerLite",
+      #                    options = providerTileOptions(noWrap = TRUE), group = "none")
                          
         #addProviderTiles("Thunderforest.Landscape", group = "Topographical") %>%
         #addProviderTiles("OpenStreetMap.Mapnik", group = "Road map") %>%

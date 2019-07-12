@@ -5,6 +5,7 @@
 
 # To check what value might work for the adjustment for the camera time, use
 # camera_gps_time_difference("2016 Phoenix", "2016-12-26 GRANITE MTN WALK.GPX", filter_by_time = FALSE) 
+# camera_gps_time_difference("2019 Two Moors Way", "2019-06-26 Ivybridge to Scorriton .gpx", filter_by_time = FALSE) 
 
 
 library("rgdal")
@@ -34,26 +35,52 @@ source("add_trips_to_map.R") # need this to get pad_description()
 saved_trip_data <- TRUE
 # If you need to re-run the data for a trip, make sure the trip file is removed from 
 # the folder saved_trip_data.  The trips are saved because it makes re-running things
-# much, much faster. 
+# much, much faster.   
+# Or set saved_trip_data to FALSE and redo all the trips (with no need to delete files). Takes a long time.
 
-ntrips <- 24 # all of the lists below must be this long
-trips_df <- data_frame(trip = c("Hadrians Wall",         "Coast to Coast",        "Pennine Way",     "Pennine Way",    
-                               "SWCP", "Wales",                 "Cotswolds",             "Amsterdam",            
+ntrips <- 29 # all of the lists below must be this long
+trips_df <- tibble(trip = c("Hadrians Wall",         "Coast to Coast",        "Pennine Way",     "Pennine Way",    
+                               "SWCP", "Wales",                 "Cotswolds",      "Amsterdam",  "Amsterdam",          
                                "Bryce",                 "Grand Canyon",          "Grand Canyon",          "Yosemite",             
-                               "Tucson",                "Phoenix",               "Phoenix", "Florida", "Pyrenees",              "Cabo de Gata",         
-                               "Andorra",               "Cadaques",              "Madrid",                "Andalusia", "Amalfi Coast", "Rome"),
-                       year = c(2011, 2012, 2014, 2013, 2015, 2012, 2012, 2011, 2013, 2016, 2013, 2013, 2014, 2015, 2016, 2016, 2014, 2015, 2014, 2014, 2015, 2015, 2016, 2016),
-                       area = c("England", "England", "England", "England", "England", "England", "England", "England", "USA",     "USA",    
-                        "USA",     "USA",     "USA",     "USA",     "USA", "USA", "Spain",   "Spain",   "Spain",   "Spain",   "Spain",   "Spain", "Italy", "Italy"),
+                               "Tucson",                "Phoenix",               "Phoenix", "Florida", 
+                               "Texas",     "Southern Cal",
+                               "Pyrenees",              "Cabo de Gata",         
+                               "Andorra",               "Cadaques",              "Madrid",                "Andalusia", 
+                               "Amalfi Coast", "Rome",
+                               "Greece", "Two Moors Way"),
+                       year = c(2011, 2012, 2014, 2013, 
+                                2015, 2012, 2012, 2011, "2018",
+                                2013, 2016, 2013, 2013, 
+                                2014, 2015, 2016, 2017, 
+                                2017, 2018,
+                                2014, 2015, 
+                                2014, 2014, 2015, 2015, 
+                                2016, 2016, 
+                                2018, 2019),
+                       area = c("England", "England", "England", "England", 
+                                "England", "England", "England", "England", "England", 
+                                "USA",     "USA",   "USA",     "USA",     
+                                "USA",     "USA",     "USA", "USA", 
+                                "USA", "USA", 
+                                "Spain",   "Spain",   
+                                "Spain",   "Spain",   "Spain",   "Spain", 
+                                "Italy", "Italy", 
+                                "Greece", "England"),
                        bbox11 = vector("double", ntrips), bbox12 = vector("double", ntrips),  
                        bbox21 = vector("double", ntrips), bbox22 = vector("double", ntrips),
                        gpx_name = vector("character", ntrips),
                        album_name = vector("character", ntrips),
                        add_camera_gps = FALSE,
                        # ajust_camera_time exists to adjust the difference between the time zone on the GPS trace and the time zone on the photo.
-                       adjust_camera_time = c(5 , -1 , 0 , -1 ,  -1 ,  -1 , 4 , 5 ,
-                                             -1 ,  7 , 4 , 7 , 7 , 6 , 7, 5,
-                                              -1 , -2 , -1 , -1 , -2 , -2, -1, -2)
+                       adjust_camera_time = c(5 , -1 , 0 , -1 ,  
+                                              -1 ,  -1 , 4 , 5 , -1,
+                                             -1 ,  7 , 4 , 7 ,
+                                             7 , 6 , 7, 2,
+                                             3, 8,
+                                              -1 , -2 , 
+                                             -1 , -1 , -2 , -2, 
+                                             -1, -2, 
+                                             -3, 5)
 )
 trips_df$adjust_camera_time <- trips_df$adjust_camera_time * 60 * 60 # translate from hours to seconds
 # the foler names where I have the GPS traces don't always match the album names on Flickr.
@@ -67,6 +94,7 @@ trips_df$trip[(trips_df$trip == "Pennine Way") & (trips_df$year == 2013)] <- "Pe
 trips_df$trip[(trips_df$trip == "Pennine Way") & (trips_df$year == 2014)] <- "Pennine Way north"
 trips_df$album_name[trips_df$album_name == "2016 Rome"] <- "2016 Italy"
 trips_df$album_name[trips_df$album_name == "2016 Amalfi Coast"] <- "2016 Italy"
+trips_df$album_name[trips_df$album_name == "2019 Two Moors Way"] <- "2019 England"
 
 # This last trip was saved via myTracks at a rate one point per second (17,775 points) so loads very slowly
 # I neeed to deal with this as a separate issue
@@ -78,8 +106,9 @@ trips_df$album_name[trips_df$album_name == "2016 Amalfi Coast"] <- "2016 Italy"
 # Next we have to get the gps info for the trips in trips_df
 trips_list <- vector("list", length(trips_df$trip))
 trip_photos_list <- vector("list", length(trips_df$trip))
-colors_list <- vector("list", length(trips_df$trip))
+colors_list <- vector("list", length(trips_df$trip)) 
 for (i in seq_along(trips_df$trip)) {
+# for (i in seq_along(trips_df$trip[1:2])) {
   # this is what combine_gpx returns:
   # list(day_names = file_names, trip_photos = trip_photos, 
   #      traces_list = traces_list, traces_color = traces_color, trip_bbox = trip_bbox)
@@ -106,10 +135,25 @@ trips_df$bbox11[trips_df$trip == "Coast to Coast"] <- -3.626556
 trips_df$bbox12[trips_df$trip == "Coast to Coast"] <- -1.738667
 
 trip_photos_df <- bind_rows(trip_photos_list) %>%
-  select(id, secret, title, description, datetaken,
+  select(id, secret, title, description, 
                         latitude, longitude, url_m, height_m, width_m,
                         url_s, height_s, width_s, album_id, include, lng, lat, area) %>%
   filter(include)
+
+gps_lat_long <- trip_photos_df %>% 
+  group_by(id, secret) %>%
+  summarise(lng = max(lng, na.rm = TRUE), lat = max(lat, na.rm = TRUE)) %>%   # max of NULL returns -Inf
+  mutate(lng = ifelse(lng == -Inf, NA, lng), lat = ifelse(lat == -Inf, NA, lat))
+trip_photos_df <- trip_photos_df %>%
+  select(id, secret, title, description, 
+         url_m, height_m, width_m, latitude, longitude, # removed lng, lat, 
+         url_s, height_s, width_s, album_id, include, area) %>%
+  left_join(gps_lat_long, by = c("id", "secret")) %>%
+  mutate(lng = ifelse(is.na(lng), longitude, lng), 
+         lat = ifelse(is.na(lat), latitude, lat)) %>%
+  # datetaken gets adjusted differently for some photo albums, e.g., 2016 Italy different for Rome & Amalfi
+  select(-longitude, -latitude) %>%
+  unique()
 
 # Oh boy! I'm purrr-ing.
 other_photos <- map2(c("Other USA", "Other UK", "Other Spain"), c("USA", "England", "Spain"), collect_photos_from_album, use_api_key = api_key, use_user_id = user_id)
@@ -117,8 +161,11 @@ other_photos_df <- bind_rows(other_photos) %>%
   filter(!(id %in% trip_photos_df$id), !is.na(longitude), !is.na(latitude))
 other_photos_df$lat <- as.numeric(other_photos_df$latitude)
 other_photos_df$lng <- as.numeric(other_photos_df$longitude)
-
-
+other_photos_df <- other_photos_df %>%
+  select(id, secret, title, description, 
+         url_m, height_m, width_m, lat, lng,  
+         url_s, height_s, width_s, album_id, include, area)
+  
 all_photos_df <- bind_rows(trip_photos_df, other_photos_df)
 all_photos_df$description <- map_chr(all_photos_df$description, pad_description)
 #  photos_in_album_url(user_id, photos_df$album_id, photos_df$id),

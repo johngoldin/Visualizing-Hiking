@@ -22,14 +22,22 @@
 #test:  camera_gps_time_difference("2016 Italy", "Track_2016-10-03 COLISEUM.gpx", filter_by_time = FALSE, album = "2016 Rome") 
 #test:  camera_gps_time_difference("2016 Italy", "Track_2016-09-29 PAESTUM.gpx", filter_by_time = FALSE) 
 #test:  camera_gps_time_difference("2016 Phoenix", "2016-12-26 GRANITE MTN WALK.GPX", filter_by_time = FALSE) 
+#test:  camera_gps_time_difference("2018 Greece", "2018-04-25 Mt Zeus.gpx", filter_by_time = FALSE) 
+
+#test:  camera_gps_time_difference("2018 Greece", "2018-04-27 Friday walk to winery.gpx", filter_by_time = FALSE) 
+#test:  camera_gps_time_difference("2017 Florida", "2017-01-16 first.GPX", filter_by_time = FALSE) 
+#test:  camera_gps_time_difference("2018 Southern Cal", "2018-02-05 Palm Canyon.gpx", filter_by_time = FALSE) 
+#test:  camera_gps_time_difference("2017 Texas", "2017-12-24 Balcones Canyonlands.gpx", filter_by_time = FALSE) 
 
 camera_gps_time_difference <- function(trip_name, GPX_file, use_api_key = api_key,
                                        use_user_id = user_id,
                                        filter_by_time = TRUE,
                                        album = NULL,
                                        base_path = "~/Dropbox/Mapping Info-iDisk/Track Archive/") {
-  base_path <- path.expand(base_path)
-  GPX_file <- paste(base_path, trip_name, "/", GPX_file, sep = "")
+  if (base_path != "") {
+    base_path <- path.expand(base_path)
+    GPX_file <- paste(base_path, trip_name, "/", GPX_file, sep = "")
+  }
   if (is.null(album)) album <- trip_name
   trip_photos <- photos_from_trip(api_key = use_api_key, user_id = use_user_id, album)
   wp <- readOGR(GPX_file, layer = "track_points") # returns SpatialPointsDataFrame object
@@ -62,4 +70,25 @@ camera_gps_time_difference <- function(trip_name, GPX_file, use_api_key = api_ke
   }
   if (length(day_photos$datetaken) == 0) return(NULL)
   camera_adjust / length(day_photos$datetaken)
+}
+
+#test:  walk_files("2018 Greece", filter_by_time = FALSE) 
+
+walk_files <- function(trip_name, 
+                       base_path = "~/Dropbox/Mapping Info-iDisk/Track Archive/", ...) {
+  
+  #base_path <- path.expand(base_path)
+  file_names <- list.files(paste(base_path, trip_name, "/", sep = ""))
+  file_names <- file_names[(!str_detect(file_names, regex("Ignore", ignore_case = TRUE))) &
+                             str_detect(file_names, regex("\\.gpx", ignore_case = TRUE))]
+  gpx_files <- paste(base_path, trip_name, "/", file_names, sep = "")
+  # (?i:) makes case insensitive.   http://www.regular-expressions.info/modifiers.html
+  gpx_files <- subset(gpx_files, str_detect(gpx_files, "\\.(?i:gpx)"))   
+  gpx_files <- gpx_files[order(gpx_files)]
+  for (i in seq_along(gpx_files)) {
+    camera_gps_time_difference(trip_name = trip_name, path.expand(gpx_files[[i]]), 
+                                           use_api_key = api_key,
+                                           use_user_id = user_id,
+                                           base_path = "", ...)
+  }
 }
