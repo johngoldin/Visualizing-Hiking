@@ -1,0 +1,27 @@
+---
+title: "test map"
+output: html_notebook
+---
+
+
+```{r}
+library(leaflet)
+library("lubridate")
+library("plyr")
+library("dplyr")
+library("stringr")
+library("purrr")
+source("photoIcon.R")
+```
+
+```{r}
+source("add_trips_to_map.R")
+load("trace and photo info for trips.RData")
+```
+
+```{r}
+  usa_map <- add_trips_to_map(NULL, trips_list, colors_list, pick_area = (trips_df$area == "USA"))
+  usa_map <- add_photos_to_map(all_photos_df, usa_map, select_area = "USA")
+
+```
+

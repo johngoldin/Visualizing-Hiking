@@ -28,6 +28,7 @@
 #test:  camera_gps_time_difference("2017 Florida", "2017-01-16 first.GPX", filter_by_time = FALSE) 
 #test:  camera_gps_time_difference("2018 Southern Cal", "2018-02-05 Palm Canyon.gpx", filter_by_time = FALSE) 
 #test:  camera_gps_time_difference("2017 Texas", "2017-12-24 Balcones Canyonlands.gpx", filter_by_time = FALSE) 
+#test:  camera_gps_time_difference("2019 Two Moors Way", "2019-07-03 Withypool to Dunster.gpx", album = "2019 England", filter_by_time = FALSE) 
 
 camera_gps_time_difference <- function(trip_name, GPX_file, use_api_key = api_key,
                                        use_user_id = user_id,

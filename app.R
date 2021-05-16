@@ -6,7 +6,9 @@
 
 # based on: https://rstudio.github.io/leaflet/shiny.html
 library(shiny)
+library(shinydashboard)
 library(leaflet)
+library(leaflet.providers)
 #library("rgdal")
 library("lubridate")
 library("plyr")
@@ -26,7 +28,8 @@ source("photoIcon.R")
 #  www stuff
 #  stuff.jpg in www folder contains the heading image (of SW Coast)
 #  trace and photo infor trips.RData
-#  
+# 
+# search for "Focus on trip" and specify which trip should come up by default
 
 ########################################################################################################################
 #
@@ -44,8 +47,9 @@ print("Loading trace and photo info")
 print(system.time(load("trace and photo info for trips.RData")))
 print("Starting...")
 if (file.exists("saved_map.RData")) {
-  print("Loading map from file")
+  print("Loading map from file. If problems, delete saved_map.RData.")
   print(system.time(load("saved_map.RData")))
+  print("saved_map.RData was loaded.")
 } else {
   print("Adding traces")
   # add a map here
@@ -66,6 +70,14 @@ if (file.exists("saved_map.RData")) {
   # file.remove("saved_map.RData")       
 }
 
+# at this point, we need to add providers to each of these maps
+# I rejiggered things because saved_map data didn't successfully save the providers with the map.
+usa_map <- addMyProviders(usa_map)
+england_map <- addMyProviders(england_map)
+spain_map <- addMyProviders(spain_map)
+italy_map <- addMyProviders(italy_map)
+greece_map <- addMyProviders(greece_map)
+
 # the_map <- add_trips_to_map(NULL, trips_list, colors_list)
 # the_map <- add_photos_to_map(all_photos_df, the_map)
 
@@ -77,34 +89,39 @@ map_choices <- c("Pennine Way north", "Pennine Way south", "Coast to Coast",
 map_area <- c("England", "England", "England", "USA", "USA", "USA", "USA", "USA", "USA", "USA", "England", "England", "England",
               "Spain", "Spain", "Spain", "Spain", "Italy", "Italy", "Greece", "England")
 # add a map area here:
-default_area <- c("USA" = "Grand Canyon 2016", "England" = "Two Moors Way 2019", 
+default_area <- c("USA" = "California 2020", "England" = "Cleveland Way 2019", 
                   "Spain" = "Pyrenees 2014", "Italy" = "Amalfi Coast 2016", "Greece" = "Greece 2018")
 
 
 ui <- function(request) {
-  fluidPage(
-    img(src = "stuff.jpg", height = 608 / 2.8, width = 2035 / 2.8),
-    fluidRow(
-      column(1),
-      # Change next line to match startup area:
-      column(2, selectInput("which_area", "Select map area:", unique(map_area), selected = "England")),
-      # column(3, selectInput("which_trip", "Focus on trip:",
-      #                       paste(trips_df$trip[trips_df$area == "Italy"], trips_df$year[trips_df$area == "Italy"]),
-      #                       selected = "Amalfi Coast 2016")),
-      # Set startup area:
-      column(3, selectInput("which_trip", "Focus on trip:",
-                            paste(trips_df$trip[trips_df$area == "England"], trips_df$year[trips_df$area == "England"]),
-                            selected = "Two Moors Way 2019")),
-      column(1),
-      column(1, fluidRow(" ", p()," ", actionButton("focusButton", strong("Re-focus Map")))),
-      column(1, p()), 
-      column(1, fluidRow(" ", p()," ", bookmarkButton()))
-      #column(1, fluidRow(" ", p()," ", p(), p(), actionButton("notesButton", strong("Notes"))))
-      
+  dashboardPage(
+    dashboardHeader(title = "Souvenirs of My Walks"),
+    dashboardSidebar(
+      selectInput("which_area", "Select map area:", unique(map_area), selected = "England"),
+      selectInput("which_trip", "Focus on trip:",
+                  paste(trips_df$trip[trips_df$area == "England"], trips_df$year[trips_df$area == "USA"]),
+                  selected = "Pennine Way south 2013"),
+      actionButton("focusButton", strong("Re-focus Map")),
+      bookmarkButton()
     ),
-    fluidRow("     Click on photo icon to see photo and then click on the photo to open a new tab showing the photo in Flickr. For notes, click", 
-             a("here", href="https://johngoldin.github.io/2016/06/28/technical-note--shiny-souvenir-map-of-walks/", target="_blank"), "."),
-    leafletOutput("mymap", height = 500, width = 700)
+    
+    dashboardBody(
+      # for centering image: https://github.com/rstudio/shiny/issues/555
+      div(img(src = "stuff.jpg", height = 608 / 4, width = 2035 / 4), style = "text-align: center;"),
+      # from https://stackoverflow.com/questions/54711365/shinydashboard-increase-size-of-dashboard-page
+      # tags$head(tags$style(
+      #   HTML('.wrapper {height: auto !important; position:relative; overflow-x:hidden; overflow-y:hidden}'))),
+      
+      # tags$style(type = "text/css", "#map {height: calc(100vh - ,) !important;}"),
+      #
+      #       height = .5, collapsible = TRUE),#, height = "95vh"
+      # from https://stackoverflow.com/questions/36469631/how-to-get-leaflet-for-r-use-100-of-shiny-dashboard-height
+      tags$style(type = "text/css", "#map {height: calc(100vh - 80px) !important;}"),
+      fluidRow("     Click on photo icon to see photo and then click on the photo to open a new tab showing the photo in Flickr. For notes, click",
+               a("here", href="https://johngoldin.github.io/2016/06/28/technical-note--shiny-souvenir-map-of-walks/", target="_blank"), "."),
+      # https://stackoverflow.com/a/36471739/5828243
+      leafletOutput("mymap", height = "80vh")
+    )
   )
 }
 

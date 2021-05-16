@@ -38,7 +38,7 @@ saved_trip_data <- TRUE
 # much, much faster.   
 # Or set saved_trip_data to FALSE and redo all the trips (with no need to delete files). Takes a long time.
 
-ntrips <- 29 # all of the lists below must be this long
+ntrips <- 31 # all of the lists below must be this long
 trips_df <- tibble(trip = c("Hadrians Wall",         "Coast to Coast",        "Pennine Way",     "Pennine Way",    
                                "SWCP", "Wales",                 "Cotswolds",      "Amsterdam",  "Amsterdam",          
                                "Bryce",                 "Grand Canyon",          "Grand Canyon",          "Yosemite",             
@@ -47,16 +47,16 @@ trips_df <- tibble(trip = c("Hadrians Wall",         "Coast to Coast",        "P
                                "Pyrenees",              "Cabo de Gata",         
                                "Andorra",               "Cadaques",              "Madrid",                "Andalusia", 
                                "Amalfi Coast", "Rome",
-                               "Greece", "Two Moors Way"),
+                               "Greece", "Two Moors Way", "Cleveland Way", "California"),
                        year = c(2011, 2012, 2014, 2013, 
-                                2015, 2012, 2012, 2011, "2018",
+                                2015, 2012, 2012, 2011, 2018,
                                 2013, 2016, 2013, 2013, 
                                 2014, 2015, 2016, 2017, 
                                 2017, 2018,
                                 2014, 2015, 
                                 2014, 2014, 2015, 2015, 
                                 2016, 2016, 
-                                2018, 2019),
+                                2018, 2019, 2019, 2020),
                        area = c("England", "England", "England", "England", 
                                 "England", "England", "England", "England", "England", 
                                 "USA",     "USA",   "USA",     "USA",     
@@ -65,7 +65,7 @@ trips_df <- tibble(trip = c("Hadrians Wall",         "Coast to Coast",        "P
                                 "Spain",   "Spain",   
                                 "Spain",   "Spain",   "Spain",   "Spain", 
                                 "Italy", "Italy", 
-                                "Greece", "England"),
+                                "Greece", "England", "England", "USA"),
                        bbox11 = vector("double", ntrips), bbox12 = vector("double", ntrips),  
                        bbox21 = vector("double", ntrips), bbox22 = vector("double", ntrips),
                        gpx_name = vector("character", ntrips),
@@ -80,7 +80,7 @@ trips_df <- tibble(trip = c("Hadrians Wall",         "Coast to Coast",        "P
                                               -1 , -2 , 
                                              -1 , -1 , -2 , -2, 
                                              -1, -2, 
-                                             -3, 5)
+                                             -3, -1, -1, 7)
 )
 trips_df$adjust_camera_time <- trips_df$adjust_camera_time * 60 * 60 # translate from hours to seconds
 # the foler names where I have the GPS traces don't always match the album names on Flickr.
@@ -95,6 +95,7 @@ trips_df$trip[(trips_df$trip == "Pennine Way") & (trips_df$year == 2014)] <- "Pe
 trips_df$album_name[trips_df$album_name == "2016 Rome"] <- "2016 Italy"
 trips_df$album_name[trips_df$album_name == "2016 Amalfi Coast"] <- "2016 Italy"
 trips_df$album_name[trips_df$album_name == "2019 Two Moors Way"] <- "2019 England"
+trips_df$album_name[trips_df$album_name == "2019 Cleveland Way"] <- "2019 Cleveland Way trip"
 
 # This last trip was saved via myTracks at a rate one point per second (17,775 points) so loads very slowly
 # I neeed to deal with this as a separate issue
@@ -121,6 +122,7 @@ for (i in seq_along(trips_df$trip)) {
                           album_nam = trips_df$album_name[i],
                           use_api_key = api_key, use_user_id = user_id,
                           area = trips_df$area[i])
+    dir.create("saved_trip_data", showWarnings = FALSE)
     save(a_trip, file = paste0("saved_trip_data/", trips_df$gpx_name[i], ".RData"))
   }
   trips_list[[i]] <- a_trip$traces_list
@@ -143,7 +145,7 @@ trip_photos_df <- bind_rows(trip_photos_list) %>%
 gps_lat_long <- trip_photos_df %>% 
   group_by(id, secret) %>%
   summarise(lng = max(lng, na.rm = TRUE), lat = max(lat, na.rm = TRUE)) %>%   # max of NULL returns -Inf
-  mutate(lng = ifelse(lng == -Inf, NA, lng), lat = ifelse(lat == -Inf, NA, lat))
+  mutate(lng = ifelse(lng == -Inf, NA, lng), lat = ifelse(lat == -Inf, NA, lat), .groups = "keep")
 trip_photos_df <- trip_photos_df %>%
   select(id, secret, title, description, 
          url_m, height_m, width_m, latitude, longitude, # removed lng, lat, 
@@ -174,5 +176,5 @@ all_photos_df$photo_in_album <- map2_chr(all_photos_df$album_id, all_photos_df$i
 
 
 save(trips_df, trips_list, all_photos_df, colors_list, file = "trace and photo info for trips.RData")
-file.remove("saved_map.RData")  # need to remove the cached map
+if (file.exists("saved_map.RData")) file.remove("saved_map.RData")  # need to remove the cached map
 

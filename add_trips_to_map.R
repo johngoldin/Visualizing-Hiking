@@ -32,20 +32,32 @@ pad_description <- function(d) {
 addMyProviders <- function(m) {
   print("in my providers")
   m %>%
-    # addTiles("https://{s}.tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=452dc06e5d1947b7b4e893535d0e6b36", group = "Terrain") %>%
-    # addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
-    # addProviderTiles(providers$OpenTopoMap, group = "Open Topo") %>%
-    # addProviderTiles(providers$OpenStreetMap.Mapnik, group = "Road Map")  
-    
+    addProviderTiles("OpenStreetMap.Mapnik", group = c("Open Street Map"),
+                     options = providerTileOptions(opacity = 1.0)) %>%
     addProviderTiles(providers$OpenTopoMap, group = "Topographical") %>%
-    # addTiles("https://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png?apikey=452dc06e5d1947b7b4e893535d0e6b36", group = "Topographical") %>%
+    addProviderTiles("Esri.WorldImagery", group = "Satellite") %>% 
+     # addTiles(map, # Stadia.Outdoors
+    #          urlTemplate = "https://tiles.stadiamaps.com/tiles/outdoors/{z}/{x}/{y}{r}.png",
+    #          attribution = '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>, &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors',
+    #          group = "Stadia Outdoors") %>% 
+    # # var WaymarkedTrails_hiking = L.tileLayer('https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png', {
+    #   maxZoom: 18,
+    #   attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Map style: &copy; <a href="https://waymarkedtrails.org">waymarkedtrails.org</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+    # });
+    # addProviderTiles(providers$Esri.WorldTopoMap, group = "ESRI Topo") %>%
     addProviderTiles(providers$Thunderforest.Outdoors, group = "Outdoors",
                      options = providerTileOptions(apikey = "452dc06e5d1947b7b4e893535d0e6b36")) %>%
-    addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
-    addProviderTiles("OpenStreetMap.Mapnik", group = "Road map") %>%
-    addLayersControl(baseGroups = c("Outdoors", "Topographical", "Satellite", "Road map"),    
-                     overlayGroups = c("Hiking routes", "Photo markers"),
+    # addProviderTiles("Esri.WorldImagery", group = "Satellite",
+    #                  options = providerTileOptions(opacity = 0.75)) %>%
+    addTiles(map, # WaymarkedTrails.hiking
+             urlTemplate = "https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png",
+             attribution = 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Map style: &copy; <a href="https://waymarkedtrails.org">waymarkedtrails.org</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
+             group = "Waymarked Trails", 
+             options = providerTileOptions(opacity = 0.6)) %>%
+    addLayersControl(baseGroups = c("Open Street Map", "Topographical", "Satellite", "Outdoors"),    
+                     overlayGroups = c("Waymarked Trails", "Hiking routes", "Photo markers"),
                      options = layersControlOptions(collapsed = FALSE)) %>%
+    hideGroup("Waymarked Trails") %>% 
     addScaleBar(position = c("topleft"))
   
 }
@@ -53,8 +65,9 @@ addMyProviders <- function(m) {
 #test:   track <- readOGR("/Users/johng/Dropbox/Mapping Info-iDisk/Track Archive/2014 Pyrenees/Track_2014-10-20 ESPOT2.gpx", layer = "tracks", verbose = FALSE)
 add_lines_for_trip <- function(m = NULL, trip, trip_colors) {
   if (is.null(m)) {
-    m <- leaflet(height = "700px", width = NULL) %>%
-      addMyProviders()
+    # m <- leaflet(height = "700px", width = NULL) %>%
+    #   addMyProviders()
+    m <- leaflet(height = "700px", width = NULL)
       # Add tiles
       # addProviderTiles(providers$Thunderforest.Landscape, group = "Landscape") %>%
       # addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
@@ -96,10 +109,6 @@ add_photos_to_map <- function(photos_df, m = null, select_area = NULL) {
   if (is.null(m)) {
     m <- leaflet(height = "700px", width = NULL) %>%
       addMyProviders()
-      # addProviderTiles(providers$Thunderforest.Landscape, group = "Landscape") %>%
-      # addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
-      # addProviderTiles(providers$Stamen.Terrain, group = "Terrain") %<%
-      # addProviderTiles(providers$OpenStreetMap.Mapnik, group = "Road map")  
     }
   photos_df <- filter(photos_df, !is.na(lng), !is.na(lat), include)
   if (!is.null(select_area)) photos_df <- filter(photos_df, area == select_area)
